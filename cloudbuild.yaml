@@ -1,0 +1,32 @@
+# Cloud Build Konfiguration für Lana-Carpu/lana
+# Region: europe-west10
+
+steps:
+  # Schritt 1: Docker Image bauen
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'europe-west10-docker.pkg.dev/$PROJECT_ID/lana/lana:$COMMIT_SHA', '.']
+    dir: '.'
+
+  # Schritt 2: Docker Image pushen zu Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'europe-west10-docker.pkg.dev/$PROJECT_ID/lana/lana:$COMMIT_SHA']
+
+  # Schritt 3: Deploy zu Cloud Run (optional)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'lana'
+      - '--image=europe-west10-docker.pkg.dev/$PROJECT_ID/lana/lana:$COMMIT_SHA'
+      - '--region=europe-west10'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+
+# Docker Images speichern
+images:
+  - 'europe-west10-docker.pkg.dev/$PROJECT_ID/lana/lana:$COMMIT_SHA'
+
+# Build-Optionen
+options:
+  logging: CLOUD_LOGGING_ONLY
